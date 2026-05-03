@@ -31,12 +31,23 @@
             // ---------------------------
             // GET ANALYTICS
             // ---------------------------
-            const analyticsRes = await fetch("http://127.0.0.1:8000/analytics");
-            const analytics = await analyticsRes.json();
+           let analyticsText = "Analytics unavailable";
 
-            document.getElementById("analytics").innerText =
-                `Total Logins: ${analytics.total_logins} | Users: ${analytics.unique_users} | Devices: ${analytics.unique_devices} | Locations: ${analytics.unique_locations}`;
+try {
+    const analyticsRes = await fetch("http://127.0.0.1:8000/analytics");
+    const analytics = await analyticsRes.json();
 
+    analyticsText =
+        `Total Logins: ${analytics.total_logins} | ` +
+        `Users: ${analytics.unique_users} | ` +
+        `Devices: ${analytics.unique_devices} | ` +
+        `Locations: ${analytics.unique_locations}`;
+
+} catch (error) {
+    console.error("Analytics failed:", error);
+}
+
+document.getElementById("analytics").innerText = analyticsText;
             // ---------------------------
             // RISK LOGIC
             // ---------------------------

@@ -119,3 +119,14 @@ def get_logs():
             for r in rows
         ]
     }
+@app.get("/analytics")
+def analytics():
+    cursor.execute("SELECT * FROM logins")
+    rows = cursor.fetchall()
+
+    return {
+        "total_logins": len(rows),
+        "unique_users": len(set(r[1] for r in rows)),
+        "unique_devices": len(set(r[2] for r in rows)),
+        "unique_locations": len(set(r[3] for r in rows))
+    }
