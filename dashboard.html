@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h2>Login Security Dashboard</h2>
+
+    <button onclick="loadLogs()">Load Logs</button>
+
+    <h3 id="analytics"></h3>
+    <h3 id="summary"></h3>
+
+    <canvas id="riskChart" width="400" height="200"></canvas>
+
+    <pre id="output"></pre>
+
+    <script>
+        let chartInstance = null;
+
+        async function loadLogs() {
+
+            // ---------------------------
+            // GET LOGS
+            // ---------------------------
+            const res = await fetch("http://127.0.0.1:8000/logs");
+            const data = await res.json();
+
+            // ---------------------------
+            // GET ANALYTICS
+            // ---------------------------
+            const analyticsRes = await fetch("http://127.0.0.1:8000/analytics");
+            const analytics = await analyticsRes.json();
+
+            document.getElementById("analytics").innerText =
+                `Total Logins: ${analytics.total_logins} | Users: ${analytics.unique_users} | Devices: ${analytics.unique_devices} | Locations: ${analytics.unique_locations}`;
+
+            // ---------------------------
+            // RISK LOGIC
+            // ---------------------------
+            let highRisk = 0;
+            let mediumRisk = 0;
+            let lowRisk = 0;
+            let suspiciousCount = 0;
+
+            let text = "";
+
+            data.logs.forEach(log => {
+
+                let risk = "LOW";
+
+                // RULE 1: suspicious username pattern
+                if (log.username.includes("_")) {
+                    risk = "HIGH";
+                    highRisk++;
+                    suspiciousCount++;
+                }
+
+                // RULE 2: location-based anomaly
+                if (log.location.toLowerCase() === "texas") {
+                    risk = "MEDIUM";
+                    mediumRisk++;
+                }
+
+                // fallback
+                if (risk === "LOW") {
+                    lowRisk++;
+                }
+
+                text += `
+User: ${log.username}
+Device: ${log.device}
+Location: ${log.location}
+Time: ${log.time}
+Risk: ${risk}
+------------------------
+`;
+            });
+
+            // ---------------------------
+            // OUTPUT LOGS
+            // ---------------------------
+            document.getElementById("output").innerText = text;
+
+            document.getElementById("summary").innerText =
+                `HIGH: ${highRisk} | MEDIUM: ${mediumRisk} | LOW: ${lowRisk} | Suspicious Events: ${suspiciousCount}`;
+
+            // ---------------------------
+            // CHART
+            // ---------------------------
+            renderChart(highRisk, mediumRisk, lowRisk);
+        }
+
+        function renderChart(high, medium, low) {
+            const ctx = document.getElementById("riskChart");
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: "pie",
+                data: {
+                    labels: ["HIGH Risk", "MEDIUM Risk", "LOW Risk"],
+                    datasets: [{
+                        data: [high, medium, low],
+                        backgroundColor: ["#ff4d4d", "#ffa500", "#4caf50"]
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Risk Distribution"
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
